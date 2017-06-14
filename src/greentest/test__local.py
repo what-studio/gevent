@@ -1,7 +1,9 @@
 import greentest
 from copy import copy
+import gc
 # Comment the line below to see that the standard thread.local is working correct
 from gevent import monkey; monkey.patch_all()
+import gevent
 
 
 from threading import local
@@ -104,6 +106,19 @@ class GeventLocalTestCase(greentest.TestCase):
 
         # The sentinels should be gone too
         self.assertEqual(len(deleted_sentinels), len(greenlets))
+
+    def test_memory_leak(self):
+        def f():
+            gc.collect()
+            nlinks_before = len(gevent.getcurrent()._links)
+            for x in range(1000):
+                local()
+            gc.collect()
+            nlinks_after = len(gevent.getcurrent()._links)
+            return nlinks_before, nlinks_after
+        nlinks_before, nlinks_after = gevent.spawn(f).get()
+        print nlinks_before, nlinks_after
+        self.assertEqual(nlinks_before, nlinks_after, 'callbacks leaked')
 
 if __name__ == '__main__':
     greentest.main()
