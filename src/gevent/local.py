@@ -151,7 +151,7 @@ class _wrefdict(dict):
 
 class _localimpl(object):
     """A class managing thread-local dicts"""
-    __slots__ = 'key', 'dicts', 'localargs', 'locallock', 'clear', '__weakref__'
+    __slots__ = 'key', 'dicts', 'localargs', 'locallock', 'clears', '__weakref__'
 
     def __init__(self):
         # The key used in the Thread objects' attribute dicts.
@@ -160,6 +160,7 @@ class _localimpl(object):
         self.key = '_threading_local._localimpl.' + str(id(self))
         # { id(Thread) -> (ref(Thread), thread-local dict) }
         self.dicts = _wrefdict()
+        self.clears = []
 
     def get_dict(self):
         """Return the dict for the current thread. Raises KeyError if none
@@ -206,15 +207,15 @@ class _localimpl(object):
                 if dicts:
                     dicts.pop(idt, None)
             rawlink(clear)
-            self.clear = lambda: thread.unlink(clear)
+            self.clears.append(lambda: thread.unlink(clear))
             wrthread = None
 
         self.dicts[idt] = wrthread, localdict
         return localdict
 
     def __del__(self):
-        if hasattr(self, 'clear'):
-            self.clear()
+        for clear in self.clears:
+            clear()
 
 
 @contextmanager

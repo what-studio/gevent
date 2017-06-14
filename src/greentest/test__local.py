@@ -112,7 +112,9 @@ class GeventLocalTestCase(greentest.TestCase):
             gc.collect()
             nlinks_before = len(gevent.getcurrent()._links)
             for x in range(1000):
-                local()
+                l = local()
+                gevent.spawn(lambda l=l, x=x: setattr(l, 'x', x)).join()
+                del l
             gc.collect()
             nlinks_after = len(gevent.getcurrent()._links)
             return nlinks_before, nlinks_after
