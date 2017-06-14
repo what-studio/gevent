@@ -151,7 +151,7 @@ class _wrefdict(dict):
 
 class _localimpl(object):
     """A class managing thread-local dicts"""
-    __slots__ = 'key', 'dicts', 'localargs', 'locallock', '__weakref__'
+    __slots__ = 'key', 'dicts', 'localargs', 'locallock', 'clear', '__weakref__'
 
     def __init__(self):
         # The key used in the Thread objects' attribute dicts.
@@ -206,10 +206,15 @@ class _localimpl(object):
                 if dicts:
                     dicts.pop(idt, None)
             rawlink(clear)
+            self.clear = lambda: thread.unlink(clear)
             wrthread = None
 
         self.dicts[idt] = wrthread, localdict
         return localdict
+
+    def __del__(self):
+        if hasattr(self, 'clear'):
+            self.clear()
 
 
 @contextmanager
