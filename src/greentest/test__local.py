@@ -117,7 +117,6 @@ class GeventLocalTestCase(greentest.TestCase):
             nlinks_after = len(gevent.getcurrent()._links)
             return nlinks_before, nlinks_after
         nlinks_before, nlinks_after = gevent.spawn(f).get()
-        print nlinks_before, nlinks_after
         self.assertEqual(nlinks_before, nlinks_after, 'callbacks leaked')
 
 if __name__ == '__main__':
